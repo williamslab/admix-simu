@@ -122,7 +122,7 @@ void readDatAndSimulate(char *datFile, char *outFile) {
 
   // compulsory label for the admixture proportion; can ignore
   int ret = fscanf(in, "%*s");
-  assert(ret == 1);
+  assert(ret == 0);
 
   // read the population labels
   while(true) {
@@ -137,6 +137,7 @@ void readDatAndSimulate(char *datFile, char *outFile) {
       buf[len] = c;
       len++;
     }
+    ungetc(c, in);
     buf[len] = '\0'; // null terminate the string
     char *newName = new char[len+1];
     strcpy(newName, buf);
