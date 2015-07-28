@@ -230,6 +230,12 @@ sub print_haplotypes {
 
       # sample $ind uses chromosome number 2*$ind or 2*$ind+1
       my $indiv_to_copy = 2 * $ind + $copy_num_to_use[$ind];
+      if (length $geno_line <= $indiv_to_copy) {
+	print "Have only " . (length($geno_line)+1) . " haplotypes in ";
+	print "population " . $pop_names[$pop_num] . "\n";
+	print "Need " . 2 * @{$person_bp_ref} . ". Dying.\n";
+	exit 1;
+      }
       my $genotype = substr $geno_line, $indiv_to_copy, 1;
       print OUT "$genotype";
     }
