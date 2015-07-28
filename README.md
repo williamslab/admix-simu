@@ -7,15 +7,14 @@ switches between haplotypes.
 
 Usage:
 
-    ./simu-mix.pl [in.dat] [in.snp] [out.phgeno] [POPULATION FILES]
+    ./simu-mix.pl [in.dat] [in.snp] [out_prefix] [POPULATION FILES]
 
 An example using data for 80 SNPs:
 
-    ./simu-mix.pl example/AA.dat example/yri.snp AA.phgeno -CEU example/ceu.phgeno -YRI example/yri.phgeno
+    ./simu-mix.pl example/AA.dat example/yri.snp AA -CEU example/ceu.phgeno -YRI example/yri.phgeno
 
-The above call will create a file called AA.phgeno in the current directory.
-
-The above script requires that the C++ program 'mixer' is compiled. See
+The above call will create files called AA.phgeno and AA.bp in the current
+directory. This call requires that the C++ program 'mixer' is compiled. See
 "Compiling" below.
 
 Information on each of the command line arguments as well as output files
@@ -150,8 +149,8 @@ add a genetic map to a correctly formatted SNP file.
 
 ------------------------------------------------------
 
-Output haplotype file (out.phgeno)
-----------------------------------
+Output haplotype file (out_prefix.phgeno)
+-----------------------------------------
 
 Simulated haplotypes file in Eigenstrat format. The program will overwrite
 any existing file with the name specified on the command line.
@@ -167,18 +166,19 @@ must be identical to the one given in the dat file, and it is case sensitive.
 
 ------------------------------------------------------
 
-Breakpoints (bp) file
----------------------
+Output breakpoints file (out_prefix.bp)
+---------------------------------------
 
-Each run of the mixer program (invoked by the simu-mix\*.pl scripts) generates
-a file named bp-### where ### is the process id of the run. This file contains
-information on ancestry and breakpoint locations for each sample. The file
-contains one line per sample with ancestry and breakpoints specified as
+Each run of the 'mixer' program (invoked by the simu-mix\*.pl scripts)
+generates a breakpoint file. This file contains information on ancestry and
+breakpoint locations for each sample. The first line contains the population
+labels (from the dat file) that were used for admixing. The remainder of the
+file contains one line per sample with ancestry and breakpoints specified as
 \[pop\_index\]:\[marker\_index\]. Here \[pop\_index\] is a 0 indexed population
-number with population 0 being the first population listed in the .dat file,
+number with population 0 being the first population listed on line 1
 population 1 the second population, etc.  (Note that the column for the
-proportions of admixed individuals does not count as a population.)
-The \[marker\_index\] is 0 based and is inclusive.
+proportions of admixed individuals in the dat file does not count as a
+population.) The \[marker\_index\] is 0 based and is inclusive.
 
 Example bp line:
 

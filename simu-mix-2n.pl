@@ -8,7 +8,7 @@ $script_dir =~ s#[^/]*$##;
 
 my $mix_program = "${script_dir}mixer";
 
-my ($dat_file, $snp_file, $out_file);
+my ($dat_file, $snp_file, $out_prefix);
 my @pop_names;
 my @pop_files;
 my %hash_pop_names;
@@ -18,13 +18,7 @@ my %hash_pop_names;
 &check_pops_match_dat(); # ensure populations in $dat_file match @pop_names
 
 # generate a breakpoints filename
-my $bp_prefix = "bp-$$";
-my $bp_file = $bp_prefix;
-my $i = 0;
-while (-e $bp_file) {
-  $bp_file = $bp_prefix . $i;
-  $i++;
-}
+my $bp_file = "$out_prefix.bp";
 
 # call simulator
 print "Calling simulator:\n";
@@ -58,7 +52,7 @@ sub parse_args() {
 
   $dat_file = $ARGV[0];
   $snp_file = $ARGV[1];
-  $out_file = $ARGV[2];
+  $out_prefix = $ARGV[2];
   for(my $i = 3; $i < @ARGV; $i+=2) {
     if ($ARGV[$i] !~ /^-/) {
       print "Bad argument: $ARGV[$i]\n\n";
@@ -183,10 +177,10 @@ sub print_haplotypes {
   }
 
   # open output file for admixed samples
-  my $ret = open OUT, ">$out_file";
+  my $ret = open OUT, ">$out_prefix.phgeno";
   if (!$ret) {
     &clean_up();
-    die "Couldn't open output file $out_file: $!\n";
+    die "Couldn't open output file $out_prefix.phgeno: $!\n";
   }
 
   # We have two chromosomes for each population so that within-population
@@ -276,10 +270,10 @@ sub print_haplotypes {
 #  }
 #
 #  # open output file for admixed samples
-#  my $ret = open OUT, ">$out_file";
+#  my $ret = open OUT, ">$out_prefix.phgeno";
 #  if (!$ret) {
 #    &clean_up();
-#    die "Couldn't open output file $out_file: $!\n";
+#    die "Couldn't open output file $out_prefix.phgeno: $!\n";
 #  }
 #
 #  while (my $indiv_bps = <BP>) {
