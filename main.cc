@@ -107,9 +107,9 @@ void readDatAndSimulate(char *datFile, char *outFile) {
     exit(1);
   }
 
-  // Generate 10x samples in terms of recombination breakpoints so that we're
+  // Generate 20x samples in terms of recombination breakpoints so that we're
   // sure to get a diverse population to sample from in each generation
-  int numSampsToSimulate = 10 * numSamples;
+  int numSampsToSimulate = 20 * numSamples;
 
   // Make space in arrays that will store simulation results for each sample
   for(int i = 0; i < numSampsToSimulate; i++) {
