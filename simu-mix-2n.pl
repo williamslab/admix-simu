@@ -30,7 +30,8 @@ if ($ret != 0) {
   die "Failed to run simulator program $mix_program\n";
 }
 
-print "\nDone simulating; producing results using breakpoints file\n";
+print "\nDone simulating break point locations.\n";
+print "Producing haplotypes using breakpoints file\n";
 
 my @person_bp;
 my @pop_indices;
