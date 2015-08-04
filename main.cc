@@ -23,14 +23,13 @@ typedef vector<Segment>*   SegmentList;
 // Function decls
 unsigned int getRandSeed();
 void readDatAndSimulate(char *datFile, char *outFile);
-void simulate(int numSampsToSimulate, int simGeneration,
-	      float *populationProportion, int numPops,
+void simulate(int numSampsToSimulate, float *populationProportion, int numPops,
 	      vector<SegmentList> &simuOutput,
-	      vector<SegmentList> &prevSimulated,
+	      vector<SegmentList> &prevSimulated, int prevGeneration,
 	      bool useOnlyAdmixed = false);
-bool decideIfRecomb(double geneticDistance, int simGeneration);
-void recordSegment(SegmentList simuOutput, int popNum, int endMarker,
-		   vector<SegmentList> &prevSimulated,
+bool decideIfRecomb(double geneticDistance);
+void recordSegment(SegmentList simuOutput, int popNum, int copyChrom,
+		   int endMarker, vector<SegmentList> &prevSimulated,
 		   int numSampsToSimulate);
 int  choosePop(float *populationProportion, int numPops);
 void swapSimuListsAndClear(vector<SegmentList> *&prevSimulated,
@@ -107,9 +106,10 @@ void readDatAndSimulate(char *datFile, char *outFile) {
     exit(1);
   }
 
-  // Generate 20x samples in terms of recombination breakpoints so that we're
-  // sure to get a diverse population to sample from in each generation
-  int numSampsToSimulate = 20 * numSamples;
+  // Simulate recombination break points for at least 10k samples (or 20*N)
+  // haplotypes so that we're sure to get a diverse population to sample from
+  // in each generation
+  int numSampsToSimulate = max(10000, 20 * numSamples);
 
   // Make space in arrays that will store simulation results for each sample
   for(int i = 0; i < numSampsToSimulate; i++) {
@@ -221,15 +221,15 @@ void readDatAndSimulate(char *datFile, char *outFile) {
 
     int simGenerations = simToGeneration - prevGeneration;
     // simulate the first generation:
-    simulate(numSampsToSimulate, /*simGenerations=*/ 1, popProportions, numPops,
-	     *simuOutput, *prevSimulated);
-    if (simGenerations > 1) {
+    simulate(numSampsToSimulate, popProportions, numPops, *simuOutput,
+	     *prevSimulated, prevGeneration);
+    for(int i = 1; i < simGenerations; i++) {
       // ready the lists for this new simulation:
       swapSimuListsAndClear(prevSimulated, simuOutput, numSampsToSimulate);
       // simulate the rest of the generations, which will only descend from the
       // admixed samples generated in the previous simulate() call.
-      simulate(numSampsToSimulate, simGenerations - 1, popProportions, numPops,
-	       *simuOutput, *prevSimulated, /*useOnlyAdmixed=*/ true);
+      simulate(numSampsToSimulate, popProportions, numPops, *simuOutput,
+	       *prevSimulated, prevGeneration+1, /*useOnlyAdmixed=*/ true);
     }
 
     if (c == EOF)
@@ -250,18 +250,43 @@ void readDatAndSimulate(char *datFile, char *outFile) {
   output(outFile, *prevSimulated, numSamples);
 }
 
-void simulate(int numSampsToSimulate, int simGeneration, float *popProportions,
-	      int numPops, vector<SegmentList> &simuOutput,
-	      vector<SegmentList> &prevSimulated, bool useOnlyAdmixed) {
+void simulate(int numSampsToSimulate, float *popProportions, int numPops,
+	      vector<SegmentList> &simuOutput,
+	      vector<SegmentList> &prevSimulated, int prevGeneration,
+	      bool useOnlyAdmixed) {
   for(int ind = 0; ind < numSampsToSimulate; ind++) {
-
-    // The population that the current segment is sampled from:
-    int curPop = -1;
-    if (useOnlyAdmixed)
-      curPop = 0; // use admixed population
 
     int prevChrom = -1;
     double prevMapPos = 0.0;
+
+    // get populations for the homologs in the diploid parent of the haploid
+    // individual being simulated. Will randomly choose populations for
+    // both chromosomes unless we're only sampling admixed haplotypes or
+    // if we're in the first generation (see below)
+    int copyPop[2] = { 0, 0 }; // initially assume <useOnlyAdmixed> is true...
+    if (!useOnlyAdmixed) {
+      copyPop[0] = choosePop(popProportions, numPops);
+      if (prevGeneration == 0)
+	copyPop[1] = copyPop[0]; // first generation: parent must be unadmixed
+      else
+	copyPop[1] = choosePop(popProportions, numPops);
+    }
+
+    // for when a homolog(s) is from the admixed population in the previous
+    // generation, get chromosome number(s) to copy from; require that these
+    // are different if copyPop[0] == copyPop[1] == 0 (both from prev generation
+    // admixture)
+    int copyChrom[2] = { -1, -1 }; // initially assume copyPop[i] != 0
+    for(int i = 0; i < 2; i++) {
+      if (copyPop[i] == 0)
+	copyChrom[i] = rand() % numSampsToSimulate;
+    }
+    while (copyChrom[0] == copyChrom[1]) { // make sure these are different
+      copyChrom[1] = rand() % numSampsToSimulate;
+    }
+
+    // choose one of the homologs to copy from
+    int curHomolog = rand() % 2;
 
     int numMarkers = Marker::getNumMarkers();
     for(int marker = 0; marker < numMarkers; marker++) {
@@ -269,18 +294,14 @@ void simulate(int numSampsToSimulate, int simGeneration, float *popProportions,
       int curChrom = curMarker->getChrom();
       double curMapPos = curMarker->getMapPos();
       if (curChrom != prevChrom) {
-	// End of prev chrom: record the segment (if we've sampled: curPop >= 0)
-	if (curPop >= 0 && marker > 0)
-	  recordSegment(simuOutput[ind], curPop, /*endMarker=*/ marker - 1,
+	// End of prev chrom: record the segment (if we've sampled: marker > 0)
+	if (marker > 0)
+	  recordSegment(simuOutput[ind], copyPop[curHomolog],
+			copyChrom[curHomolog], /*endMarker=*/ marker - 1,
 			prevSimulated, numSampsToSimulate);
 
-	if (!useOnlyAdmixed) {
-	  // resample population for new chrom
-	  curPop = choosePop(popProportions, numPops);
-	  // should only ever need to sample a population when we're simulating
-	  // one generation
-	  assert(simGeneration == 1);
-	}
+	// resample copy homolog for new chromosome
+	curHomolog = rand() % 2;
 
 	// no previous marker on this chromosome, so no genetic distance -- skip
 	prevChrom = curChrom;
@@ -289,47 +310,52 @@ void simulate(int numSampsToSimulate, int simGeneration, float *popProportions,
       }
 
       double geneticDistance = curMapPos - prevMapPos;
-      bool isRecomb = decideIfRecomb(geneticDistance, simGeneration);
+      bool isRecomb = decideIfRecomb(geneticDistance);
       if (isRecomb) {
 	// end of the currently running segment; record it:
 	// Note: we use endMarker = marker - 1 since the recombination takes
 	// place between the current marker and the previous one.
-	recordSegment(simuOutput[ind], curPop, /*endMarker=*/ marker - 1,
+	recordSegment(simuOutput[ind], copyPop[curHomolog],
+		      copyChrom[curHomolog], /*endMarker=*/ marker - 1,
 		      prevSimulated, numSampsToSimulate);
+
+	// switch the homolog that we're copying from
+	curHomolog ^= 1;
 
 	// don't need to resample now that we're only sampling whole chromosomes
 	// from a population during the first generation and then only sampling
 	// from these chromosomes (which become the admixed population) in
 	// subsequent generations
 //	curPop = choosePop(popProportions, numPops);
-	// Ensure that the above comment really is true:
-	assert(simGeneration == 1 || useOnlyAdmixed);
       }
       
       prevMapPos = curMapPos;
       prevChrom = curChrom;
     }
     // record final segment
-    recordSegment(simuOutput[ind], curPop, /*endMarker=*/ numMarkers - 1,
-		  prevSimulated, numSampsToSimulate);
+    recordSegment(simuOutput[ind], copyPop[curHomolog], copyChrom[curHomolog],
+		  /*endMarker=*/ numMarkers - 1, prevSimulated,
+		  numSampsToSimulate);
+
+    if ((ind+1) % 128 == 0) {
+      printf("Simulated individual %d / %d in generation %d\r",
+	     ind+1, numSampsToSimulate, prevGeneration + 1);
+      fflush(stdout);
+    }
   }
+
+  printf("Simulated all %d individuals in generation %d            \n",
+	 numSampsToSimulate, prevGeneration + 1);
 }
 
-bool decideIfRecomb(double geneticDistance, int simGeneration) {
-  // Traditional way based on 1 - e^{-g * generations}:
+bool decideIfRecomb(double geneticDistance) {
   double randVal = (double) rand() / RAND_MAX;
-  double recombProb = 1 - exp(-geneticDistance * simGeneration);
+  double recombProb = 1 - exp(-geneticDistance);
   return randVal < recombProb;
-
-  // Based on the more precise (1 - (1-g)^generations) formula that the
-  // exponential formula approximates.
-//  double randVal = (double) rand() / RAND_MAX;
-//  double recombProb = 1 - pow(1 - geneticDistance, simGeneration);
-//  return randVal < recombProb;
 }
 
-void recordSegment(SegmentList outputInd, int popNum, int endMarker,
-		   vector<SegmentList> &prevSimulated,
+void recordSegment(SegmentList outputInd, int popNum, int copyChrom,
+		   int endMarker, vector<SegmentList> &prevSimulated,
 		   int numSampsToSimulate) {
   if (popNum != 0) {
     Segment s;
@@ -347,8 +373,6 @@ void recordSegment(SegmentList outputInd, int popNum, int endMarker,
     else
       startMarker = (*outputInd)[numSimuSegments - 1].endMarker + 1;
 
-    // randomly sample a previous chromosome to copy from:
-    int copyChrom = rand() % numSampsToSimulate;
     assert(copyChrom >= 0 && copyChrom < numSampsToSimulate);
 
     vector<Segment>::const_iterator copySeg;
