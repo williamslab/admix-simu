@@ -259,27 +259,23 @@ void simulate(int numSampsToSimulate, float *popProportions, int numPops,
     int prevChrom = -1;
     double prevMapPos = 0.0;
 
-    // get populations for the homologs in the diploid parent of the haploid
-    // individual being simulated. Will randomly choose populations for
-    // both chromosomes unless we're only sampling admixed haplotypes or
-    // if we're in the first generation (see below)
-    int copyPop[2] = { 0, 0 }; // initially assume <useOnlyAdmixed> is true...
-    if (!useOnlyAdmixed) {
-      copyPop[0] = choosePop(popProportions, numPops);
-      if (prevGeneration == 0)
-	copyPop[1] = copyPop[0]; // first generation: parent must be unadmixed
-      else
-	copyPop[1] = choosePop(popProportions, numPops);
-    }
+    // get populations for the diploid parent of the haploid individual being
+    // simulated. Will randomly choose populations for both chromosomes unless
+    // we're only sampling admixed haplotypes or if we're in the first
+    // generation (see below)
+    int copyPop = 0; // initially assume <useOnlyAdmixed> is true...
+    if (!useOnlyAdmixed)
+      copyPop = choosePop(popProportions, numPops);
 
     // for when a homolog(s) is from the admixed population in the previous
     // generation, get chromosome number(s) to copy from; require that these
-    // are different if copyPop[0] == copyPop[1] == 0 (both from prev generation
+    // are different if copyPop == 0 (both from prev generation
     // admixture)
-    int copyChrom[2] = { -1, -1 }; // initially assume copyPop[i] != 0
-    for(int i = 0; i < 2; i++) {
-      if (copyPop[i] == 0)
+    int copyChrom[2] = { -1, -1 }; // initially assume copyPop != 0
+    if (copyPop == 0) {
+      for(int i = 0; i < 2; i++) {
 	copyChrom[i] = rand() % numSampsToSimulate;
+      }
     }
     while (copyChrom[0] == copyChrom[1]) { // make sure these are different
       copyChrom[1] = rand() % numSampsToSimulate;
@@ -296,9 +292,9 @@ void simulate(int numSampsToSimulate, float *popProportions, int numPops,
       if (curChrom != prevChrom) {
 	// End of prev chrom: record the segment (if we've sampled: marker > 0)
 	if (marker > 0)
-	  recordSegment(simuOutput[ind], copyPop[curHomolog],
-			copyChrom[curHomolog], /*endMarker=*/ marker - 1,
-			prevSimulated, numSampsToSimulate);
+	  recordSegment(simuOutput[ind], copyPop, copyChrom[curHomolog],
+			/*endMarker=*/ marker - 1, prevSimulated,
+			numSampsToSimulate);
 
 	// resample copy homolog for new chromosome
 	curHomolog = rand() % 2;
@@ -315,9 +311,9 @@ void simulate(int numSampsToSimulate, float *popProportions, int numPops,
 	// end of the currently running segment; record it:
 	// Note: we use endMarker = marker - 1 since the recombination takes
 	// place between the current marker and the previous one.
-	recordSegment(simuOutput[ind], copyPop[curHomolog],
-		      copyChrom[curHomolog], /*endMarker=*/ marker - 1,
-		      prevSimulated, numSampsToSimulate);
+	recordSegment(simuOutput[ind], copyPop, copyChrom[curHomolog],
+		      /*endMarker=*/ marker - 1, prevSimulated,
+		      numSampsToSimulate);
 
 	// switch the homolog that we're copying from
 	curHomolog ^= 1;
@@ -333,7 +329,7 @@ void simulate(int numSampsToSimulate, float *popProportions, int numPops,
       prevChrom = curChrom;
     }
     // record final segment
-    recordSegment(simuOutput[ind], copyPop[curHomolog], copyChrom[curHomolog],
+    recordSegment(simuOutput[ind], copyPop, copyChrom[curHomolog],
 		  /*endMarker=*/ numMarkers - 1, prevSimulated,
 		  numSampsToSimulate);
 
