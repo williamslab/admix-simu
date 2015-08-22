@@ -187,3 +187,19 @@ Example bp line:
 The above individual has ancestry from population 0 at markers 0 through 20,
 inclusive (i.e., 21 markers) and ancestry from population 1 at markers 21
 through 30 (10 markers).
+
+------------------------------------------------------
+
+Per-site ancestry values
+------------------------
+
+The script bp-to-anc.pl will produce a file that lists the true ancestry for
+each position of the simulated haplotype. It is a simple decoding of the
+bp file, which contains integer values that correspond to a given population
+and the positions they span. Rather than ranges of sites for a given
+population, this script produces lines with the ancestry for every site
+explicitly listed. Each line corresponds to a haplotype, and on this line,
+character n (counting characters from 1 for the first character on the line)
+corresponds to SNP n (counting from 1 for the first line in the .snp file).
+Thus each line contains exactly M characters, where M is the number of markers
+in the input .snp file.
