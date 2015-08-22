@@ -11,27 +11,35 @@ my $mix_program = "${script_dir}mixer";
 my ($dat_file, $snp_file, $out_prefix);
 my @pop_names;
 my @pop_files;
+my $bp_file;
 my %hash_pop_names;
 
 
 &parse_args();
-&check_pops_match_dat(); # ensure populations in $dat_file match @pop_names
+if (not defined $bp_file) {
+  &check_pops_match_dat(); # ensure populations in $dat_file match @pop_names
 
-# generate a breakpoints filename
-my $bp_file = "$out_prefix.bp";
+  # generate a breakpoints filename
+  $bp_file = "$out_prefix.bp";
 
-# call simulator
-print "Calling simulator:\n";
-my $ret = system("$mix_program $dat_file $snp_file $bp_file");
+  # call simulator
+  print "Calling simulator:\n";
+  my $ret = system("$mix_program $dat_file $snp_file $bp_file | tee $out_prefix.log");
+  system("sed -i 's/.*\\r//g' $out_prefix.log");
 
-if ($ret != 0) {
-  # call failed: clean up
-  &clean_up();
-  die "Failed to run simulator program $mix_program\n";
+  if ($ret != 0) {
+    # call failed: clean up
+    &clean_up();
+    die "Failed to run simulator program $mix_program\n";
+  }
+
+  print "\nDone simulating break point locations.\n";
+  print "Producing haplotypes using breakpoints file\n";
+}
+else {
+  print "Producing haplotypes using provided breakpoints file $bp_file\n";
 }
 
-print "\nDone simulating break point locations.\n";
-print "Producing haplotypes using breakpoints file\n";
 
 my @person_bp;
 my @pop_indices;
@@ -51,8 +59,13 @@ sub parse_args() {
     &print_usage();
   }
 
-  $dat_file = $ARGV[0];
-  $snp_file = $ARGV[1];
+  if ($ARGV[0] eq "-bp") {
+    $bp_file = $ARGV[1];
+  }
+  else {
+    $dat_file = $ARGV[0];
+    $snp_file = $ARGV[1];
+  }
   $out_prefix = $ARGV[2];
   for(my $i = 3; $i < @ARGV; $i+=2) {
     if ($ARGV[$i] !~ /^-/) {
@@ -111,7 +124,9 @@ sub check_pops_match_dat() {
 
 sub print_usage() {
   print "Usage:\n";
-  print "  $0 [in.dat] [in.snp] [out.phgeno] [POPULATION FILES]\n\n";
+  print "  $0 [in.dat] [in.snp] [out_prefix] [POPULATION FILES]\n";
+  print "    OR\n";
+  print "  $0 -bp [file.bp] [out_prefix] [POPULATION_FILES]\n\n";
   print "POPULATION FILES is a list of arguments, one for each population ";
   print "specified in\n";
   print "in.dat.  The format is -POP_LABEL [in.phgeno].\n\n";
@@ -138,6 +153,36 @@ sub parse_break_points {
   # indicates which population label corresponds to each index number
   @{$pop_indices_ref} = split /\s+/, $header;
 
+  if (not defined $dat_file) {
+    # check to ensure these match the populations we've received
+
+    if (scalar @{$pop_indices_ref} != scalar @pop_names) {
+      my $num_pops = @pop_names;
+      my $num_pop_fields = @{$pop_indices_ref};
+      print "Error: user supplied arguments for $num_pops populations, but bp ";
+      print "file contains\n";
+      print "$num_pop_fields populations\n";
+      exit;
+    }
+
+    my %pop_names_seen;
+    my @pops = @{$pop_indices_ref};
+    while (@pops) {
+      my $cur = shift @pops;
+      if (not defined $hash_pop_names{$cur}) {
+	print "Error: bp file specifies population $cur, which wasn't supplied";
+	print " as an argument\n";
+	exit;
+      }
+      elsif (defined $pop_names_seen{$cur}) {
+	print "Error: bp file contains label for population $cur more than ";
+	print "once\n";
+	exit;
+      }
+      $pop_names_seen{$cur} = 1; # saw this population
+    }
+  }
+
   # read each line from the file, which describes the breakpoints for each
   # individual
   my $total_bps = 0;
@@ -153,6 +198,7 @@ sub parse_break_points {
 
   my $ave = $total_bps / $num_indivs;
   print "Average number of break points per individual: $ave\n";
+  system("echo Average number of break points per individual: $ave >> $out_prefix.log");
 
   close BP;
 }
