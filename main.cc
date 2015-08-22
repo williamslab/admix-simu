@@ -229,7 +229,7 @@ void readDatAndSimulate(char *datFile, char *outFile) {
       // simulate the rest of the generations, which will only descend from the
       // admixed samples generated in the previous simulate() call.
       simulate(numSampsToSimulate, popProportions, numPops, *simuOutput,
-	       *prevSimulated, prevGeneration+1, /*useOnlyAdmixed=*/ true);
+	       *prevSimulated, prevGeneration+i, /*useOnlyAdmixed=*/ true);
     }
 
     if (c == EOF)
