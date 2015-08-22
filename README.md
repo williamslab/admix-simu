@@ -193,13 +193,20 @@ through 30 (10 markers).
 Per-site ancestry values
 ------------------------
 
-The script bp-to-anc.pl will produce a file that lists the true ancestry for
+The script bp2anc.pl will produce a file that lists the true ancestry for
 each position of the simulated haplotype. It is a simple decoding of the
 bp file, which contains integer values that correspond to a given population
 and the positions they span. Rather than ranges of sites for a given
 population, this script produces lines with the ancestry for every site
 explicitly listed. Each line corresponds to a haplotype, and on this line,
 character n (counting characters from 1 for the first character on the line)
-corresponds to SNP n (counting from 1 for the first line in the .snp file).
+corresponds to SNP n (counting from 1 for the first line in the snp file).
 Thus each line contains exactly M characters, where M is the number of markers
-in the input .snp file.
+in the input snp file.
+
+The script takes a bp file as an argument and outputs the per-site ancestry
+data to STDOUT. Thus, for example:
+
+    ./bp2anc.pl AA.bp > AA.hanc
+
+Writes the per-site ancestry of each haplotype specified in AA.bp to AA.hanc.
