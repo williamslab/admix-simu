@@ -20,7 +20,7 @@ if (not defined $bp_file) {
   &check_pops_match_dat(); # ensure populations in $dat_file match @pop_names
 
   # generate a breakpoints filename
-  my $bp_file = "$out_prefix.bp";
+  $bp_file = "$out_prefix.bp";
 
   # call simulator
   print "Calling simulator:\n";
@@ -314,8 +314,8 @@ sub print_haplotypes {
 	  die "Error: items out of sync" unless (scalar keys %searched_ids ==
 					scalar @{$copying_sample[ $pop_num ]} );
 	  my $num_haplotypes = @{$copying_sample[ $pop_num ]};
-	  my $pop_name = $pop_names[$pop_num];
-	  die "Error: used all $num_haplotypes haplotypes in pop $pop_name\n";
+	  my $pop_name = $pop_indices[$pop_num];
+	  die "Error: used all $num_haplotypes haplotypes in pop $pop_name (ind $ind, marker $marker)\n";
 	}
 
 	# found source that's not being copied from:
