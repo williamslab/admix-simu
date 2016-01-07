@@ -6,15 +6,20 @@ EXEC= mixer
 GPP = g++
 GCC = gcc
 DEFINES= 
-#CFLAGS = -g -Wall $(DEFINES)
-# optimized; remove asserts
-#CFLAGS = -O2 -Wall -DNDEBUG $(DEFINES)
-CFLAGS = -O2 -Wall $(DEFINES)
+CFLAGS = -Wall $(DEFINES)
+ifdef DEBUG           # to use run `make DEBUG=1`
+  CFLAGS += -g
+else
+  CFLAGS += -O2
+endif
+
 # profiling: run program normally then do:
 # (note: I haven't read about the options below, I just found them in a
 #  Dr. Dobb's article.)
 #     `gprof -b -z hapi gmon.out`
-#CFLAGS = -pg -O2 -Wall $(DEFINES)
+ifdef PROFILE       # to use run `make PROFILE=1
+  CFLAGS += -pg
+endif
 
 LIBS = 
 
