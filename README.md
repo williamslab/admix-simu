@@ -44,7 +44,7 @@ copying switches from one of these two haplotypes to the other.
 Simulating only breakpoints
 ---------------------------
 
-If haplotypes for the simulated samples are not needed, the mixer program
+If haplotypes for the simulated data are not needed, the mixer program
 can be used to simulate only breakpoints according to a specified genetic
 map and marker set.
 
@@ -75,7 +75,7 @@ Dat file
 The dat file describes the admixture process to be simulated. Example dat files
 are available in example/aa.dat and example/continuous.dat. The first line of
 the file contains K+2 columns, where K is the number of source populations.
-The first field on line one specifies the number of samples to be simulated.
+The first field on line one specifies the number of haplotypes to be simulated.
 The second field is a label for the admixed population that is produced during
 the run. (This population can contribute have non-zero ancestry contribution
 after the first generation in which admixture occurs; i.e., beginning on the
@@ -171,9 +171,9 @@ Output breakpoints file (out_prefix.bp)
 
 Each run of the 'mixer' program (invoked by the simu-mix\*.pl scripts)
 generates a breakpoint file. This file contains information on ancestry and
-breakpoint locations for each sample. The first line contains the population
+breakpoint locations for each haplotype. The first line contains the population
 labels (from the dat file) that were used for admixing. The remainder of the
-file contains one line per sample with ancestry and breakpoints specified as
+file contains one line per haplotype with ancestry and breakpoints specified as
 \[pop\_index\]:\[marker\_index\]. Here \[pop\_index\] is a 0 indexed population
 number with population 0 being the first population listed on line 1
 population 1 the second population, etc.  (Note that the column for the
@@ -184,7 +184,7 @@ Example bp line:
 
     0:20 1:30
 
-The above individual has ancestry from population 0 at markers 0 through 20,
+The above haplotype has ancestry from population 0 at markers 0 through 20,
 inclusive (i.e., 21 markers) and ancestry from population 1 at markers 21
 through 30 (10 markers).
 
