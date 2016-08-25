@@ -144,8 +144,9 @@ SNP file
 --------
 
 Eigenstrat format SNP file that specifies the genetic map to be used for
-sampling recombination events. The insert-map.pl script can be used to
-add a genetic map to a correctly formatted SNP file.
+sampling recombination events. The insert-map.pl script (available in the
+HAPI-PUR github repository) can be used to add a genetic map to a correctly
+formatted SNP file.
 
 ------------------------------------------------------
 
