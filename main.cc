@@ -23,7 +23,7 @@ typedef vector<Segment>*   SegmentList;
 // Function decls
 unsigned int getRandSeed();
 void readDatAndSimulate(char *datFile, char *outFile);
-void simulate(int numSampsToSimulate, float *populationProportion, int numPops,
+void simulate(int numSampsToSimulate, double *populationProportion, int numPops,
 	      vector<SegmentList> &simuOutput,
 	      vector<SegmentList> &prevSimulated, int prevGeneration,
 	      bool useOnlyAdmixed = false);
@@ -31,7 +31,7 @@ bool decideIfRecomb(double geneticDistance);
 void recordSegment(SegmentList simuOutput, int popNum, int copyChrom,
 		   int endMarker, vector<SegmentList> &prevSimulated,
 		   int numSampsToSimulate);
-int  choosePop(float *populationProportion, int numPops);
+int  choosePop(double *populationProportion, int numPops);
 void swapSimuListsAndClear(vector<SegmentList> *&prevSimulated,
 			   vector<SegmentList> *&simuOutput,
 			   int numSampsToSimulate);
@@ -149,7 +149,7 @@ void readDatAndSimulate(char *datFile, char *outFile) {
   int prevGeneration = 0;
   int line = 2; // what line number are we on?
   int numPops = popNames.size() + 1; // + 1 for admixed pop
-  float *popProportions = new float[numPops];
+  double *popProportions = new double[numPops];
 
   // read each line of simulation specs and perform the simulations by calling
   // simulate()
@@ -179,11 +179,11 @@ void readDatAndSimulate(char *datFile, char *outFile) {
 
     printf("Simulating: Generation: %2d, ", simToGeneration);
 
-    float totalProportions = 0.0f;
+    double totalProportions = 0.0f;
 
     // read in proportions for each of the populations
     for(int i = 0; i < numPops; i++) {
-      numRead = fscanf(in, "%f", &popProportions[i]);
+      numRead = fscanf(in, "%lf", &popProportions[i]);
       if (numRead != 1) {
 	printf("Error on line %d: failed to read proportion for ", line);
 	if (i == 0) {
@@ -250,7 +250,7 @@ void readDatAndSimulate(char *datFile, char *outFile) {
   output(outFile, *prevSimulated, numSamples);
 }
 
-void simulate(int numSampsToSimulate, float *popProportions, int numPops,
+void simulate(int numSampsToSimulate, double *popProportions, int numPops,
 	      vector<SegmentList> &simuOutput,
 	      vector<SegmentList> &prevSimulated, int prevGeneration,
 	      bool useOnlyAdmixed) {
@@ -397,10 +397,10 @@ void recordSegment(SegmentList outputInd, int popNum, int copyChrom,
   }
 }
 
-int choosePop(float *popProportions, int numPops) {
-  float randVal = (float) rand() / RAND_MAX;
+int choosePop(double *popProportions, int numPops) {
+  double randVal = (double) rand() / RAND_MAX;
 
-  float totalPrevProportions = 0.0f;
+  double totalPrevProportions = 0.0f;
   for(int i = 0; i < numPops; i++) {
     if (popProportions[i] == 0.0f) {
       continue; // no contribution from this population
