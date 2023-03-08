@@ -1,3 +1,14 @@
+Please use Haptools
+===================
+
+The Gymrek lab has released [Haptools](https://github.com/cast-genomics/haptools) for
+simulating admixed haplotypes using the same methodology and same admixture
+specification file format as admix-simu. Conveniently, Haptools supports VCF or PGEN
+files for input genetic data. Please use that tool: admix-simu is no longer being
+maintained. See
+[Massarat et al. (2023)](https://academic.oup.com/bioinformatics/article/39/3/btad104/7058928)
+for details.
+
 Admixture simulator
 ===================
 Program to simulate admixture between multiple populations using arbitrary
